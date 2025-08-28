@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VisitePlanner — PezzaliAPP</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--ink:#e5e7eb;--muted:#9ca3af;--accent:#22c55e;--line:#1f2937}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    .wrap{max-width:1100px;margin:auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    h1{font-size:22px;margin:0}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+    .tab{padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#0b1220;cursor:pointer}
+    .tab.active{background:var(--card)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:16px 0;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+    label{display:block;margin:10px 0 6px 0;color:var(--muted)}
+    input[type="text"],input[type="number"],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    input[type="file"]{color:var(--ink)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    button{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:#0b1220;color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);border-color:#16a34a;color:#052e16;font-weight:600}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;font-size:14px}
+    th{color:var(--muted);font-weight:500}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#0b1220}
+    .ok{background:#064e3b}
+    .warn{background:#7c2d12}
+    .hint{color:var(--muted);font-size:13px}
+    footer{opacity:.7;font-size:12px;margin:24px 0;text-align:center}
+    .right{float:right}
+    .sp{height:8px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>VisitePlanner <span class="pill">offline PWA</span></h1>
+    <div>
+      <button id="installBtn" class="tab">Installa</button>
+      <a class="tab" href="https://pezzaliapp.com" target="_blank" rel="noreferrer">PezzaliAPP</a>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="cal">1) Calendario</button>
+    <button class="tab" data-tab="cli">2) Clienti</button>
+    <button class="tab" data-tab="plan">3) Pianifica</button>
+    <button class="tab" data-tab="exp">4) Export</button>
+  </nav>
+
+  <!-- Calendario -->
+  <section class="card" id="tab-cal">
+    <h2>Import Calendario Outlook (CSV)</h2>
+    <p class="hint">Supporta il CSV esportato da Outlook con colonne come: <em>Oggetto, Data inizio, Ora inizio, Data fine, Ora fine, Luogo, Categorie, Giornata intera</em>.</p>
+    <div class="row">
+      <div>
+        <label>Seleziona file .csv</label>
+        <input type="file" id="calCsv" accept=".csv" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="primary" id="importCal">Importa</button>
+        <button id="clearCal">Svuota calendario</button>
+      </div>
+    </div>
+    <div class="sp"></div>
+    <table id="calTable">
+      <thead><tr><th>Data</th><th>Ora</th><th>Oggetto</th><th>Luogo</th><th>Ore</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Clienti -->
+  <section class="card" id="tab-cli" style="display:none">
+    <h2>Anagrafica Clienti</h2>
+    <div class="row3">
+      <div><label>Cliente</label><input type="text" id="c_nome"></div>
+      <div><label>Città/Provincia</label><input type="text" id="c_citta"></div>
+      <div>
+        <label>Frequenza Visita</label>
+        <select id="c_freq">
+          <option value="">—</option>
+          <option>Settimanale</option><option>Quindicinale</option>
+          <option>Mensile</option><option>Bimestrale</option>
+          <option>Trimestrale</option><option>Semestrale</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Priorità</label>
+        <select id="c_prio"><option>Alta</option><option>Media</option><option>Bassa</option></select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="primary" id="addCliente">Aggiungi</button>
+        <button id="exportClientiCsv">Esporta Clienti (CSV)</button>
+        <button id="importClientiCsvBtn">Importa Clienti (CSV)</button>
+        <input type="file" id="clientiCsv" accept=".csv" style="display:none" />
+      </div>
+    </div>
+    <div class="sp"></div>
+    <table id="cliTable">
+      <thead><tr><th>Cliente</th><th>Città/Prov</th><th>Frequenza</th><th>Priorità</th><th>Ultima visita</th><th>Prossima scadenza</th><th>Stato</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Pianificazione -->
+  <section class="card" id="tab-plan" style="display:none">
+    <h2>Suggerimenti Pianificazione</h2>
+    <p class="hint">Identifica giorni con disponibilità e clienti in scadenza. Giornata = 8h; visita = ~2h (incluso spostamento).</p>
+    <div class="row">
+      <div>
+        <label>Orizzonte (giorni)</label>
+        <input type="number" id="horizon" value="60" min="7" max="180" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="primary" id="generaPlan">Genera suggerimenti</button>
+      </div>
+    </div>
+    <div class="sp"></div>
+    <table id="planTable">
+      <thead><tr><th>Data</th><th>Area</th><th>Clienti suggeriti</th><th>Slot disponibili</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Export -->
+  <section class="card" id="tab-exp" style="display:none">
+    <h2>Esporta</h2>
+    <p class="hint">Genera eventi .ICS da importare in Outlook/Google con il piano sotto.</p>
+    <button class="primary" id="exportICS">Scarica .ics</button>
+    <div class="sp"></div>
+    <table id="finalTable">
+      <thead><tr><th>Data</th><th>Ora</th><th>Titolo</th><th>Luogo</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>© 2025 PezzaliAPP — VisitePlanner • Dati salvati in locale (LocalStorage) • PWA offline</footer>
+</div>
+
+<script>
+// --- State ---
+const state = {
+  cal: [],       // {date, time, subject, location, hours}
+  clients: [],   // {name, city, freq, prio}
+  plan: []       // {date, area, clients[], slots}
+};
+
+const FREQUENCY_DAYS = {
+  "Settimanale": 7, "Quindicinale": 14, "Mensile": 30,
+  "Bimestrale": 60, "Trimestrale": 90, "Semestrale": 180
+};
+
+// --- Helpers ---
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+function save(){ localStorage.setItem('vp_state', JSON.stringify(state)); }
+function load(){
+  try{
+    const raw = localStorage.getItem('vp_state');
+    if(raw){ const s = JSON.parse(raw); Object.assign(state, s); }
+  }catch(e){ console.warn(e); }
+}
+function normalize(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
+function fmtDate(d){ const dt=new Date(d); return dt.toISOString().slice(0,10); }
+function addRow(tbody, cells){ const tr = document.createElement('tr'); cells.forEach(c=>{ const td=document.createElement('td'); td.innerHTML=c; tr.appendChild(td);}); tbody.appendChild(tr); return tr; }
+
+// --- Tabs ---
+$$('.tab').forEach(btn=>btn.addEventListener('click', e=>{
+  if(!btn.dataset.tab) return;
+  $$('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['cal','cli','plan','exp'].forEach(id=>$('#tab-'+id).style.display='none');
+  $('#tab-'+btn.dataset.tab).style.display='block';
+}));
+
+// --- Calendar import ---
+$('#importCal').addEventListener('click', async ()=>{
+  const file = $('#calCsv').files[0];
+  if(!file) return alert('Seleziona un file CSV Outlook.');
+  const txt = await file.text();
+  // Simple CSV parse (comma/semicolon). We try both.
+  let rows = txt.split(/\r?\n/).filter(Boolean).map(r=>r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/));
+  // Detect semicolons
+  if(rows[0].length<3){
+    rows = txt.split(/\r?\n/).filter(Boolean).map(r=>r.split(/;(?=(?:[^"]*"[^"]*")*[^"]*$)/));
+  }
+  const head = rows.shift().map(h=>h.replace(/(^"|"$)/g,''));
+  const getIdx = name => head.findIndex(h=>normalize(h)===normalize(name));
+  const idx = {
+    oggetto: getIdx('Oggetto'),
+    dinizio: getIdx('Data inizio'),
+    oinizio: getIdx('Ora inizio'),
+    dfine:   getIdx('Data fine'),
+    ofine:   getIdx('Ora fine'),
+    luogo:   getIdx('Luogo'),
+    allday:  getIdx('Giornata intera')
+  };
+  const arr = rows.map(r=>r.map(c=>c.replace(/(^"|"$)/g,'')));
+  const parsed = arr.map(r=>{
+    const d1 = r[idx.dinizio], t1 = r[idx.oinizio], d2 = r[idx.dfine], t2 = r[idx.ofine];
+    const start = new Date(`${d1} ${t1}`);
+    const end   = new Date(`${d2} ${t2}`);
+    let hours = (end - start) / 36e5;
+    if((r[idx.allday]||'').toLowerCase().includes('vero')) hours = 8;
+    return {
+      date: isNaN(start)? (d1||'') : fmtDate(start),
+      time: t1 || '',
+      subject: r[idx.oggetto]||'',
+      location: r[idx.luogo]||'',
+      hours: Math.max(0, isNaN(hours)?0:hours)
+    };
+  }).filter(x=>x.date);
+  state.cal = parsed;
+  save();
+  renderCal();
+});
+
+$('#clearCal').addEventListener('click', ()=>{
+  if(!confirm('Svuotare il calendario importato?')) return;
+  state.cal = []; save(); renderCal();
+});
+
+function renderCal(){
+  const tb = $('#calTable tbody'); tb.innerHTML='';
+  state.cal.slice(0,500).forEach(e=> addRow(tb, [e.date, e.time, e.subject, e.location, e.hours.toFixed(1)]));
+}
+
+// --- Clients ---
+$('#addCliente').addEventListener('click', ()=>{
+  const name = $('#c_nome').value.trim();
+  if(!name) return alert('Inserisci il nome cliente');
+  state.clients.push({name, city: $('#c_citta').value.trim(), freq: $('#c_freq').value, prio: $('#c_prio').value});
+  save(); renderClients();
+  $('#c_nome').value=''; $('#c_citta').value=''; $('#c_freq').value=''; $('#c_prio').value='Media';
+});
+
+$('#exportClientiCsv').addEventListener('click', ()=>{
+  const head = ['Cliente','Città/Prov','Frequenza','Priorità'];
+  const rows = state.clients.map(c=>[c.name,c.city,c.freq,c.prio]);
+  const csv = [head.join(','), ...rows.map(r=>r.map(v=>`"${(v||'').replaceAll('"','""')}"`).join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='clienti.csv'; a.click();
+});
+
+$('#importClientiCsvBtn').addEventListener('click', ()=>$('#clientiCsv').click());
+$('#clientiCsv').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const txt = await file.text();
+  let rows = txt.split(/\r?\n/).filter(Boolean).map(r=>r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/));
+  const head = rows.shift().map(h=>h.replace(/(^"|"$)/g,''));
+  const idx = {
+    name: head.findIndex(h=>normalize(h).includes('cliente')),
+    city: head.findIndex(h=>normalize(h).includes('citt')),
+    freq: head.findIndex(h=>normalize(h).includes('frequ')),
+    prio: head.findIndex(h=>normalize(h).includes('prior'))
+  };
+  rows.forEach(r=>{
+    const v = lambda=> (r[lambda]||'').replace(/(^"|"$)/g,'');
+    state.clients.push({name:v(idx.name), city:v(idx.city), freq:v(idx.freq), prio:v(idx.prio)||'Media'});
+  });
+  save(); renderClients();
+});
+
+function lastVisitFor(name){
+  const key = normalize(name);
+  const matches = state.cal.filter(e=> normalize(e.subject).includes(key) );
+  if(!matches.length) return null;
+  matches.sort((a,b)=> a.date<b.date?1:-1);
+  return matches[0].date;
+}
+
+function nextDueFrom(last, freq){
+  if(!last || !freq || !FREQUENCY_DAYS[freq]) return '';
+  const d = new Date(last); d.setDate(d.getDate()+FREQUENCY_DAYS[freq]);
+  return fmtDate(d);
+}
+
+function daysTo(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr), t = new Date();
+  return Math.round((d - new Date(t.toISOString().slice(0,10))) / 86400000);
+}
+
+function renderClients(){
+  const tb = $('#cliTable tbody'); tb.innerHTML='';
+  state.clients.forEach((c,idx)=>{
+    const last = lastVisitFor(c.name);
+    const due = nextDueFrom(last, c.freq);
+    const dd = daysTo(due);
+    let stato = '';
+    if(due){
+      if(dd<=14) stato = '<span class="pill warn">URGENTE</span>';
+      else if(dd<=30) stato = '<span class="pill">PROSSIMA</span>';
+      else stato = '<span class="pill ok">OK</span>';
+    }
+    addRow(tb,[c.name,c.city,c.freq||'-',c.prio,last||'',due||'',stato,
+      `<button data-del="${idx}">Elimina</button>`]);
+  });
+  // delete handlers
+  $$('#cliTable [data-del]').forEach(b=> b.addEventListener('click', (e)=>{
+    const i = +e.target.dataset.del; state.clients.splice(i,1); save(); renderClients();
+  }));
+}
+
+// --- Plan generation ---
+function capacityByDate(){
+  // Sum busy hours per day from state.cal
+  const map = {};
+  state.cal.forEach(e=>{
+    map[e.date] = (map[e.date]||0) + (isFinite(e.hours)?e.hours:0);
+  });
+  const res = {};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const horizon = Math.max(7, Math.min(180, +$('#horizon').value || 60));
+  for(let i=0;i<horizon;i++){
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const key = fmtDate(d);
+    const used = map[key]||0;
+    const remaining = Math.max(0, 8 - used);
+    res[key] = {used, slots: Math.floor(remaining/2)};
+  }
+  return res;
+}
+
+$('#generaPlan').addEventListener('click', ()=>{
+  const cap = capacityByDate();
+  // Build list of due clients sorted by urgency and priority
+  const prioWeight = {Alta:0, Media:1, Bassa:2};
+  const enriched = state.clients.map(c=>{
+    const last = lastVisitFor(c.name);
+    const due = nextDueFrom(last, c.freq);
+    const dd = due ? daysTo(due) : 9999;
+    return {...c, last, due, dd, prioW: prioWeight[c.prio]??1};
+  }).sort((a,b)=> (a.dd-b.dd) || (a.prioW-b.prioW));
+
+  const planRows = [];
+  // Greedy: fill earliest dates with slots using nearest-city grouping (simple by city string)
+  Object.keys(cap).sort().forEach(date=>{
+    let slots = cap[date].slots;
+    if(slots<=0) return;
+    // pick same-area clients first
+    const chosen = [];
+    for(let pass=0; pass<2 && slots>0; pass++){
+      for(let i=0;i<enriched.length && slots>0;i++){
+        const c = enriched[i];
+        if(c._planned || !c.due) continue;
+        // choose urgent first pass or upcoming second pass
+        const urgent = c.dd<=14;
+        if((pass===0 && urgent) || (pass===1 && c.dd<=30)){
+          chosen.push(c); c._planned = true; slots--;
+        }
+      }
+    }
+    if(chosen.length){
+      const area = chosen.map(c=>c.city).filter(Boolean).slice(0,3).join(" • ");
+      planRows.push({date, area: area||'—', clients: chosen.map(c=>c.name), slots: cap[date].slots});
+    }
+  });
+  state.plan = planRows;
+  save(); renderPlan(); renderFinal();
+});
+
+function renderPlan(){
+  const tb = $('#planTable tbody'); tb.innerHTML='';
+  state.plan.forEach((p,idx)=>{
+    addRow(tb, [p.date, p.area, p.clients.join(', '), p.slots, `<button data-push="${idx}">Aggiungi a Export</button>`]);
+  });
+  $$('#planTable [data-push]').forEach(b=> b.addEventListener('click', (e)=>{
+    const i = +e.target.dataset.push; pushPlanToExport(state.plan[i]);
+  }));
+}
+
+// --- Export ICS ---
+const finalEvents = []; // {date, time, title, location}
+
+function pushPlanToExport(p){
+  // 09:00 / 11:30 / 14:00 / 16:30 slots
+  const hours = ["09:00","11:30","14:00","16:30"];
+  p.clients.forEach((name,idx)=>{
+    if(idx<4){
+      finalEvents.push({date:p.date, time:hours[idx], title:`Visita – ${name}`, location:p.area||''});
+    }
+  });
+  renderFinal();
+}
+
+function renderFinal(){
+  const tb = $('#finalTable tbody'); tb.innerHTML='';
+  finalEvents.forEach((e,idx)=> addRow(tb, [e.date, e.time, e.title, e.location]));
+}
+
+$('#exportICS').addEventListener('click', ()=>{
+  if(!finalEvents.length) return alert('Nessun evento da esportare.');
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PezzaliAPP//VisitePlanner//IT'];
+  finalEvents.forEach(e=>{
+    const dt = new Date(e.date + ' ' + e.time);
+    const start = new Date(dt);
+    const end = new Date(dt); end.setMinutes(end.getMinutes()+90); // 1h30 per visita
+    function icsDate(x){ return x.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z'); }
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + (Math.random().toString(36).slice(2)) + '@visiteplanner');
+    lines.push('DTSTAMP:' + icsDate(new Date()));
+    lines.push('DTSTART:' + icsDate(start));
+    lines.push('DTEND:' + icsDate(end));
+    lines.push('SUMMARY:' + e.title.replace(/,/g,'\,'));
+    if(e.location) lines.push('LOCATION:' + e.location.replace(/,/g,'\,'));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\n')], {type:'text/calendar'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='visiteplanner_export.ics'; a.click();
+});
+
+// --- Load state and render on start ---
+load(); renderCal(); renderClients(); renderPlan(); renderFinal();
+
+// --- PWA install ---
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').style.display='inline-block'; });
+$('#installBtn').addEventListener('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null;
+});
+
+// Register SW
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js') );
+}
+</script>
+</body>
+</html>
